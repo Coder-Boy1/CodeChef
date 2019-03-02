@@ -1,0 +1,113 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+#define int long long
+
+const int N = 3e5 + 5;
+ 
+typedef struct data
+{
+        data* bit[2];
+        int cnt = 0;
+}trie;
+ 
+map<int, trie*> root;
+
+trie* head;
+
+int minXor(trie* cur, int x, int i)
+{
+        if(i < 0)
+                return 0;
+        int b = x>>i & 1;
+        if(cur->bit[b] && cur->bit[b]->cnt>0)
+                return minXor(cur->bit[b], x, i-1);
+        else
+                return (1LL<<i) + minXor(cur->bit[!b], x, i-1);
+}        
+ 
+int maxXor(trie* cur, int x, int i)
+{
+        if(i < 0)
+                return 0;
+        int b = x>>i & 1;
+        if(cur->bit[!b] && cur->bit[!b]->cnt>0)
+                return (1LL<<i) + maxXor(cur->bit[!b], x, i-1);
+        else
+                return maxXor(cur->bit[b], x, i-1);
+}        
+
+trie* get(trie* node, int b)
+{
+        if(!node || !node->bit[b])
+                return NULL;
+        return node->bit[b];
+}
+ 
+void addNew(trie* old, trie* cur, int val, int i)
+{
+        cur->cnt++;
+        if(i < 0)
+                return;
+        int b = val>>i & 1;
+        cur->bit[b] = new trie();
+        addNew(get(old, b), cur->bit[b], val, i-1);
+        cur->bit[!b] = get(old, !b);
+}
+ 
+void add_persistance(int par, int u, int val)
+{
+        trie* cur = new trie();
+        addNew(root[par], cur, val, 30);
+        root[u] = cur;
+}
+
+
+int32_t main()
+{
+        int n,q;
+        cin>>n>>q;
+
+        int r, key;
+        cin>>r>>key;
+
+        root[0]=new trie();
+        add_persistance(0,r,key);
+
+        for(int i=0;i<n-1;i++)
+        {
+                int u, v, k;
+                cin>>u>>v>>k;
+                add_persistance(v,u,k);
+        }
+
+
+        int ans = 0;
+        while(q--)
+        {
+                int type;
+                cin>>type;
+                type ^= ans;
+                if(type == 0)
+                {
+                        int v, u, k;
+                        cin>>v>>u>>k;
+                        u ^= ans, v ^= ans, k ^= ans;
+                        add_persistance(v, u, k);
+                }
+                else
+                {
+                        int v, k;
+                        cin>>v>>k;
+                        v ^= ans, k ^= ans;
+                        int mn = minXor(root[v], k, 30);
+                        int mx = maxXor(root[v], k, 30);
+                        cout<<mn<<" "<<mx<<endl;
+                        ans = mn ^ mx;
+                }
+        }
+
+
+        return 0;
+}
